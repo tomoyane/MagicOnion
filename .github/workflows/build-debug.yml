@@ -12,7 +12,6 @@ on:
 
 jobs:
   build-dotnet:
-    if: "!(contains(github.event.head_commit.message, '[skip ci]') || contains(github.event.head_commit.message, '[ci skip]'))"
     runs-on: ubuntu-latest
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -45,8 +44,28 @@ jobs:
       - run: dotnet test ./tests/MagicOnion.Server.Tests/ -c Debug
       - run: dotnet test ./tests/MagicOnion.Generator.Tests/ -c Debug
 
+  build-dotnet-experimental:
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      NUGET_XMLDOC_MODE: skip
+      DOTNET_SDK_VERSION_3: "3.1.x"
+      DOTNET_SDK_VERSION_5: "5.0.x"
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "${{ env.DOTNET_SDK_VERSION_3 }}"
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: "${{ env.DOTNET_SDK_VERSION_5 }}"
+      # build
+      - run: dotnet build ./src/MagicOnion.Server.OpenTelemetry/ -c Debug
+      # test
+
   build-unity:
-    if: "!(contains(github.event.head_commit.message, '[skip ci]') || contains(github.event.head_commit.message, '[ci skip]')) && ((github.event_name == 'push' && github.repository_owner == 'Cysharp') || startsWith(github.event.pull_request.head.label, 'Cysharp:'))"
     strategy:
       matrix:
         unity: ["2019.3.9f1", "2019.4.13f1", "2020.1.12f1"]
